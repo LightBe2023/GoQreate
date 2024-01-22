@@ -107,20 +107,21 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
       }
 
       // Save data to Firestore
-      // await FirebaseFirestore.instance.collection('projects').add({
-      //   'title': titleController.text,
-      //   'purpose': purposeController.text,
-      //   'details': detailsController.text,
-      //   'budget': budgetController.text,
-      //   'start_date': _dates != null && _dates!.isNotEmpty
-      //       ? _dates![0].toUtc()
-      //       : null,
-      //   'end_date': _dates != null && _dates!.isNotEmpty
-      //       ? _dates![1].toUtc()
-      //       : null,
-      //   'fileUrls': fileUrls,
-      //   'milestones': milestones,
-      // });
+      await FirebaseFirestore.instance.collection('projects').add({
+        'userName': 'jerwel',
+        'title': titleController.text,
+        'purpose': purposeController.text,
+        'details': detailsController.text,
+        'budget': budgetController.text,
+        'start_date': _dates != null && _dates!.isNotEmpty
+            ? _dates![0].toUtc()
+            : null,
+        'end_date': _dates != null && _dates!.isNotEmpty
+            ? _dates![1].toUtc()
+            : null,
+        'fileUrls': fileUrls,
+        'milestones': milestones,
+      });
 
       Navigator.of(context).push(
         MaterialPageRoute(

@@ -33,19 +33,46 @@ class _HomeScreenState extends State<HomeScreen> {
       String userName = "jerwel"; // Replace with the actual userName
 
       // Query to fetch data where 'userName' is equal to the specified value
-      QuerySnapshot<Map<String, dynamic>> querySnapshot = await FirebaseFirestore.instance
+      QuerySnapshot<Map<String, dynamic>> querySnapshot =
+      await FirebaseFirestore.instance
           .collection('projects')
           .where('userName', isEqualTo: userName)
           .get();
 
       // Check if any documents were found
       if (querySnapshot.docs.isNotEmpty) {
-        projectCards = querySnapshot.docs.map((doc) {
-          return ProjectCard(
+        projectCards = [];
+
+        for (QueryDocumentSnapshot<Map<String, dynamic>> doc in querySnapshot.docs) {
+          // Fetch members' data from the 'members' subcollection
+          QuerySnapshot<Map<String, dynamic>> membersSnapshot =
+          await doc.reference.collection('members').get();
+
+          // Extract member images from the 'profileImage' field
+          List memberImages = membersSnapshot.docs
+              .map((memberDoc) =>
+          memberDoc.get('profileImage').toString().isNotEmpty
+              ? memberDoc.get('profileImage')
+              : memberDoc.get('userName'))
+              .toList();
+
+          // If there are no member images, use the first letter of the username as the default image
+          // if (memberImages.isEmpty) {
+          //   String defaultImage = (doc.get('userName') ?? "").toString().isNotEmpty
+          //       ? doc.get('userName').toString().substring(0, 1).toUpperCase()
+          //       : "Default"; // Provide a default value if userName is null or empty
+          //   memberImages.add(defaultImage);
+          // }
+
+          projectCards.add(ProjectCard(
+            projectId: doc.id,
             title: doc.get('title') ?? "",
             details: doc.get('details') ?? "",
-          );
-        }).toList();
+            members: memberImages,
+            startDate: doc.get('start_date')?.toDate(), // Convert Firestore timestamp to DateTime
+            endDate: doc.get('end_date')?.toDate(), // Convert Firestore timestamp to DateTime
+          ));
+        }
 
         setState(() {});
       }
@@ -53,6 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
       print("Error fetching data: $e");
     }
   }
+
 
 
   @override
@@ -159,202 +187,202 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               const SizedBox(height: 30,),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Notes',
-                    style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    'See All',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 10,
-                      color: const Color(0xFF0AD3FF),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10,),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  SizedBox(
-                    width: screenWidth / 3.4,
-                    height: 80,
-                    child: Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 3,
-                      child: Stack(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(top: 6, left: 10),
-                            child: Positioned(
-                              top: 0,
-                              left: 0,
-                              child: Text(
-                                '19',
-                                style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.normal,
-                                    fontSize: 8,
-                                  color: const Color(0xFFFDBF06),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.only(
-                                  topRight: Radius.circular(10),
-                                ),
-                                child: CustomPaint(
-                                  size: Size(cardHalfWidth, (cardHalfWidth * 0.5833333333333334).toDouble()),
-                                  painter: RPSCustomPainter(color: const Color(0xFFFDBF06)),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 25, left: 10, right: 30),
-                            child: Text(
-                              '3d Making Project',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                fontSize: 10.0,
-                                color: Colors.black,
-                                height: 1.3
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 5,),
-                  SizedBox(
-                    width: screenWidth / 3.4,
-                    height: 80,
-                    child: Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 3,
-                      child: Stack(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(top: 6, left: 10),
-                            child: Positioned(
-                              top: 0,
-                              left: 0,
-                              child: Text(
-                                '19',
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.normal,
-                                  fontSize: 8,
-                                  color: const Color(0xFF009E7D),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.only(
-                                  topRight: Radius.circular(10),
-                                ),
-                                child: CustomPaint(
-                                  size: Size(cardHalfWidth, (cardHalfWidth * 0.5833333333333334).toDouble()),
-                                  painter: RPSCustomPainter(color: const Color(0xFF009E7D)),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 25, left: 10, right: 30),
-                            child: Text(
-                              '3d Making Project',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 10.0,
-                                  color: Colors.black,
-                                  height: 1.3
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 5,),
-                  SizedBox(
-                    width: screenWidth / 3.4,
-                    height: 80,
-                    child: Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 3,
-                      child: Stack(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(top: 6, left: 10),
-                            child: Positioned(
-                              top: 0,
-                              left: 0,
-                              child: Text(
-                                '19',
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.normal,
-                                  fontSize: 8,
-                                  color: const Color(0xFFA3BCFC),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.only(
-                                  topRight: Radius.circular(10),
-                                ),
-                                child: CustomPaint(
-                                  size: Size(cardHalfWidth, (cardHalfWidth * 0.5833333333333334).toDouble()),
-                                  painter: RPSCustomPainter(color: const Color(0xFFA3BCFC)),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 25, left: 10, right: 30),
-                            child: Text(
-                              '3d Making Project',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 10.0,
-                                  color: Colors.black,
-                                  height: 1.3
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                ],
-              ),
-
-              const SizedBox(height: 30,),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //   children: [
+              //     Text(
+              //       'Notes',
+              //       style: GoogleFonts.poppins(
+              //           fontWeight: FontWeight.w600,
+              //           fontSize: 16,
+              //       ),
+              //     ),
+              //     Text(
+              //       'See All',
+              //       style: GoogleFonts.poppins(
+              //         fontWeight: FontWeight.w500,
+              //         fontSize: 10,
+              //         color: const Color(0xFF0AD3FF),
+              //       ),
+              //     ),
+              //   ],
+              // ),
+              //
+              // const SizedBox(height: 10,),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //   children: [
+              //     SizedBox(
+              //       width: screenWidth / 3.4,
+              //       height: 80,
+              //       child: Card(
+              //         shape: RoundedRectangleBorder(
+              //           borderRadius: BorderRadius.circular(10),
+              //         ),
+              //         elevation: 3,
+              //         child: Stack(
+              //           children: [
+              //             Padding(
+              //               padding: const EdgeInsets.only(top: 6, left: 10),
+              //               child: Positioned(
+              //                 top: 0,
+              //                 left: 0,
+              //                 child: Text(
+              //                   '19',
+              //                   style: GoogleFonts.poppins(
+              //                       fontWeight: FontWeight.normal,
+              //                       fontSize: 8,
+              //                     color: const Color(0xFFFDBF06),
+              //                   ),
+              //                 ),
+              //               ),
+              //             ),
+              //             Row(
+              //               mainAxisAlignment: MainAxisAlignment.end,
+              //               children: [
+              //                 ClipRRect(
+              //                   borderRadius: BorderRadius.only(
+              //                     topRight: Radius.circular(10),
+              //                   ),
+              //                   child: CustomPaint(
+              //                     size: Size(cardHalfWidth, (cardHalfWidth * 0.5833333333333334).toDouble()),
+              //                     painter: RPSCustomPainter(color: const Color(0xFFFDBF06)),
+              //                   ),
+              //                 ),
+              //               ],
+              //             ),
+              //             Padding(
+              //               padding: const EdgeInsets.only(top: 25, left: 10, right: 30),
+              //               child: Text(
+              //                 '3d Making Project',
+              //                 style: TextStyle(
+              //                   fontWeight: FontWeight.w500,
+              //                   fontSize: 10.0,
+              //                   color: Colors.black,
+              //                   height: 1.3
+              //                 ),
+              //               ),
+              //             ),
+              //           ],
+              //         ),
+              //       ),
+              //     ),
+              //     const SizedBox(width: 5,),
+              //     SizedBox(
+              //       width: screenWidth / 3.4,
+              //       height: 80,
+              //       child: Card(
+              //         shape: RoundedRectangleBorder(
+              //           borderRadius: BorderRadius.circular(10),
+              //         ),
+              //         elevation: 3,
+              //         child: Stack(
+              //           children: [
+              //             Padding(
+              //               padding: const EdgeInsets.only(top: 6, left: 10),
+              //               child: Positioned(
+              //                 top: 0,
+              //                 left: 0,
+              //                 child: Text(
+              //                   '19',
+              //                   style: GoogleFonts.poppins(
+              //                     fontWeight: FontWeight.normal,
+              //                     fontSize: 8,
+              //                     color: const Color(0xFF009E7D),
+              //                   ),
+              //                 ),
+              //               ),
+              //             ),
+              //             Row(
+              //               mainAxisAlignment: MainAxisAlignment.end,
+              //               children: [
+              //                 ClipRRect(
+              //                   borderRadius: BorderRadius.only(
+              //                     topRight: Radius.circular(10),
+              //                   ),
+              //                   child: CustomPaint(
+              //                     size: Size(cardHalfWidth, (cardHalfWidth * 0.5833333333333334).toDouble()),
+              //                     painter: RPSCustomPainter(color: const Color(0xFF009E7D)),
+              //                   ),
+              //                 ),
+              //               ],
+              //             ),
+              //             Padding(
+              //               padding: const EdgeInsets.only(top: 25, left: 10, right: 30),
+              //               child: Text(
+              //                 '3d Making Project',
+              //                 style: TextStyle(
+              //                     fontWeight: FontWeight.w500,
+              //                     fontSize: 10.0,
+              //                     color: Colors.black,
+              //                     height: 1.3
+              //                 ),
+              //               ),
+              //             ),
+              //           ],
+              //         ),
+              //       ),
+              //     ),
+              //     const SizedBox(width: 5,),
+              //     SizedBox(
+              //       width: screenWidth / 3.4,
+              //       height: 80,
+              //       child: Card(
+              //         shape: RoundedRectangleBorder(
+              //           borderRadius: BorderRadius.circular(10),
+              //         ),
+              //         elevation: 3,
+              //         child: Stack(
+              //           children: [
+              //             Padding(
+              //               padding: const EdgeInsets.only(top: 6, left: 10),
+              //               child: Positioned(
+              //                 top: 0,
+              //                 left: 0,
+              //                 child: Text(
+              //                   '19',
+              //                   style: GoogleFonts.poppins(
+              //                     fontWeight: FontWeight.normal,
+              //                     fontSize: 8,
+              //                     color: const Color(0xFFA3BCFC),
+              //                   ),
+              //                 ),
+              //               ),
+              //             ),
+              //             Row(
+              //               mainAxisAlignment: MainAxisAlignment.end,
+              //               children: [
+              //                 ClipRRect(
+              //                   borderRadius: BorderRadius.only(
+              //                     topRight: Radius.circular(10),
+              //                   ),
+              //                   child: CustomPaint(
+              //                     size: Size(cardHalfWidth, (cardHalfWidth * 0.5833333333333334).toDouble()),
+              //                     painter: RPSCustomPainter(color: const Color(0xFFA3BCFC)),
+              //                   ),
+              //                 ),
+              //               ],
+              //             ),
+              //             Padding(
+              //               padding: const EdgeInsets.only(top: 25, left: 10, right: 30),
+              //               child: Text(
+              //                 '3d Making Project',
+              //                 style: TextStyle(
+              //                     fontWeight: FontWeight.w500,
+              //                     fontSize: 10.0,
+              //                     color: Colors.black,
+              //                     height: 1.3
+              //                 ),
+              //               ),
+              //             ),
+              //           ],
+              //         ),
+              //       ),
+              //     )
+              //   ],
+              // ),
+              //
+              // const SizedBox(height: 30,),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

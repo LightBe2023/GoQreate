@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_qreate_teams/Common/colors.dart';
+import 'package:go_qreate_teams/Features/Milestone/presentation/screens/milestone_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:avatar_stack/avatar_stack.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
@@ -17,13 +18,20 @@ class ProjectDetailsScreen extends StatefulWidget {
 }
 
 class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
-
   List<String?> selectedFiles = List.filled(5, null);
   String title = "";
   String projectDetails = "";
   String budget = "";
+  DateTime? _startDate;
+  DateTime? _endDate;
 
   late TextEditingController projectDetailsController;
+
+  List _memberImages = [];
+  String _projectId = '';
+  String _searchedUserName = '';
+  List _milestones = [];
+  String _milestoneStatus = '';
 
   @override
   void initState() {
@@ -40,7 +48,8 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
       String userName = "jerwel"; // Replace with the actual userName
 
       // Query to fetch data where 'userName' is equal to the specified value
-      QuerySnapshot<Map<String, dynamic>> querySnapshot = await FirebaseFirestore.instance
+      QuerySnapshot<Map<String, dynamic>> querySnapshot =
+      await FirebaseFirestore.instance
           .collection('projects')
           .where('userName', isEqualTo: userName)
           .get();
@@ -54,6 +63,10 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
           title = snapshot.get('title') ?? "";
           projectDetails = snapshot.get('details') ?? "";
           budget = snapshot.get('budget') ?? "";
+          _startDate = (snapshot.get('start_date') as Timestamp?)?.toDate();
+          _endDate = (snapshot.get('end_date') as Timestamp?)?.toDate();
+          _milestones = snapshot.get('milestones') ?? "";
+          _milestoneStatus = snapshot.get('milestoneStatus') ?? "";
 
           // Retrieve fileUrls array from the document
           List<String>? fileUrls = List<String>.from(snapshot.get('fileUrls') ?? []);
@@ -67,6 +80,25 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
         if (projectDetails.isNotEmpty) {
           projectDetailsController = TextEditingController(text: projectDetails);
         }
+
+        for (QueryDocumentSnapshot<Map<String, dynamic>> doc in querySnapshot.docs) {
+          // Fetch members' data from the 'members' subcollection
+          QuerySnapshot<Map<String, dynamic>> membersSnapshot =
+          await doc.reference.collection('members').get();
+
+          // Extract member images from the 'profileImage' field
+          List memberImages = membersSnapshot.docs
+              .map((memberDoc) =>
+          memberDoc.get('profileImage').toString().isNotEmpty
+              ? memberDoc.get('profileImage')
+              : memberDoc.get('userName'))
+              .toList();
+
+          setState(() {
+            _memberImages = memberImages;
+            _projectId = doc.id;
+          });
+        }
       }
     } catch (e) {
       print("Error fetching data: $e");
@@ -74,9 +106,33 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
   }
 
 
+  double calculateProgressPercentage() {
+    DateTime currentDate = DateTime.now();
+    DateTime? startDate = _startDate;
+    DateTime? endDate = _endDate;
+
+    if (startDate != null && endDate != null) {
+      if (currentDate.isBefore(startDate)) {
+        // Project has not started yet
+        return 0.0;
+      } else if (currentDate.isAfter(endDate)) {
+        // Project has already ended
+        return 1.0;
+      } else {
+        // Calculate the progress based on the current date
+        Duration totalDuration = endDate.difference(startDate);
+        Duration elapsedDuration = currentDate.difference(startDate);
+        double progress = elapsedDuration.inMilliseconds / totalDuration.inMilliseconds;
+        return progress.clamp(0.0, 1.0);
+      }
+    }
+
+    // Return 0.0 if start or end date is null
+    return 0.0;
+  }
+
   @override
   Widget build(BuildContext context) {
-
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
@@ -91,17 +147,25 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
-                color: Colors.black,
+            SizedBox(
+              width: 220,
+              child: Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                  color: Colors.black,
+                ),
               ),
             ),
-            Image.asset(
-              'assets/icons/add_member.png',
-              fit: BoxFit.contain,
+            GestureDetector(
+              onTap: () {
+                _showSearchPopup(context, _projectId);
+              },
+              child: Image.asset(
+                'assets/icons/add_member.png',
+                fit: BoxFit.contain,
+              ),
             ),
           ],
         ),
@@ -130,15 +194,13 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   textAlign: TextAlign.start,
                 ),
               ),
-
               const SizedBox(height: 5,),
-
               Container(
                 width: double.infinity,
                 height: 139,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(6), // Adjust the radius for curved edges
+                  borderRadius: BorderRadius.circular(6),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.5),
@@ -150,9 +212,9 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                 ),
                 child: TextFormField(
                   controller: projectDetailsController,
-                  maxLines: null, // Allow multiple lines
+                  maxLines: null,
                   decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.all(15), // Adjust padding as needed
+                    contentPadding: const EdgeInsets.all(15),
                     border: InputBorder.none,
                     hintStyle: TextStyle(
                       color: Colors.grey.withOpacity(0.8),
@@ -160,9 +222,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20,),
-
               const SizedBox(
                 width: double.infinity,
                 child: Text(
@@ -175,19 +235,58 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   textAlign: TextAlign.start,
                 ),
               ),
-
               const SizedBox(height: 5,),
-
-              AvatarStack(
-                height: 30,
-                avatars: [
-                  for (var n = 0; n < 3; n++)
-                    NetworkImage('https://i.pravatar.cc/150?img=$n'),
+              Row(
+                children: [
+                  SizedBox(
+                    height: screenWidth / 12,
+                    width: screenWidth / 3.1,
+                    child: Stack(
+                      children: [
+                        for (int i = 0; i < _memberImages.length && i < 4; i++)
+                          Positioned(
+                            left: i * 20.0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(100),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1,
+                                ), // White stroke
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(100),
+                                child: _memberImages[i].toString().contains('http')
+                                    ? Image.network(
+                                  _memberImages[i],
+                                  width: 28,
+                                  height: 28,
+                                  fit: BoxFit.cover,
+                                )
+                                    : Container(
+                                  width: 28,
+                                  height: 28,
+                                  color: Colors.grey, // Placeholder color
+                                  child: Center(
+                                    child: Text(
+                                      _memberImages[i][0],
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ), // Add placeholder members if less than 4
+                      ],
+                    ),
+                  ),
                 ],
               ),
 
               const SizedBox(height: 20,),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -208,19 +307,15 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 5,),
-
               GestureDetector(
-                onTap: () {
-
-                },
+                onTap: () {},
                 child: Container(
                   width: double.infinity,
                   height: 55,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(6), // Adjust the radius for curved edges
+                    borderRadius: BorderRadius.circular(6),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.grey.withOpacity(0.5),
@@ -232,9 +327,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20,),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -255,13 +348,11 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 5,),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: List.generate(
-                  5, // Updated to generate 5 cards
+                  5,
                       (index) {
                     return GestureDetector(
                       onTap: () async {
@@ -278,9 +369,6 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                           setState(() {
                             selectedFiles[index] = filePath;
                           });
-
-                          // Notify the callback in the parent screen
-                          // widget.onFileSelected(filePath);
                         }
                       },
                       child: Card(
@@ -290,7 +378,6 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                           width: 62,
                           child: selectedFiles[index] != null
                               ? Image.network(
-                            // Use the selected file as the cover photo
                             selectedFiles[index]!,
                             fit: BoxFit.cover,
                           )
@@ -305,9 +392,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   },
                 ),
               ),
-
               const SizedBox(height: 15,),
-
               SizedBox(
                 width: double.infinity,
                 child: Text(
@@ -318,20 +403,32 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 5,),
-
-              LinearPercentIndicator(
-                    padding: EdgeInsets.zero,
-                    barRadius: const Radius.circular(10),
-                    lineHeight: 15,
-                    percent: 0.5,
-                    backgroundColor: ColorName.primaryColor.withOpacity(0.2),
-                    progressColor: const Color(0xFF0AD3FF),
-                  ),
-
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => MilestoneScreen(
+                          milestones: _milestones,
+                          projectId: _projectId,
+                          milestoneStatus: _milestoneStatus,
+                        title: title,
+                        details: projectDetails,
+                        startDate: _startDate,
+                      ),
+                    ),
+                  );
+                },
+                child: LinearPercentIndicator(
+                  padding: EdgeInsets.zero,
+                  barRadius: const Radius.circular(10),
+                  lineHeight: 15,
+                  percent: calculateProgressPercentage(),
+                  backgroundColor: ColorName.primaryColor.withOpacity(0.2),
+                  progressColor: const Color(0xFF0AD3FF),
+                ),
+              ),
               const SizedBox(height: 20,),
-
               SizedBox(
                 width: double.infinity,
                 child: Text(
@@ -343,11 +440,131 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   ),
                 ),
               ),
-
             ],
           ),
         ),
       ),
     );
+  }
+
+  void _showSearchPopup(BuildContext context, String projectId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Add member'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Autocomplete<String>(
+                optionsBuilder: (TextEditingValue textEditingValue) async {
+                  // Perform user search based on the entered username
+                  String searchedUserName = textEditingValue.text.trim();
+                  QuerySnapshot<Map<String, dynamic>> userSnapshot =
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .where('userName', isEqualTo: searchedUserName)
+                      .get();
+
+                  // Extract usernames from the userSnapshot
+                  List<String> usernames = userSnapshot.docs
+                      .map((userDoc) => userDoc.get('userName') as String)
+                      .toList();
+
+                  return usernames;
+                },
+                onSelected: (String userName) {
+                  // Assuming you have a function to add a member to the project
+                  // _addMemberToProject(projectId, userName, context);
+
+                  setState(() {
+                    _searchedUserName = userName;
+                  });
+
+                  // Close the search popup
+                  // Navigator.of(context).pop();
+                },
+                displayStringForOption: (String option) => option,
+              ),
+
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () async {
+                  // // Perform user search based on the entered username
+                  // String searchedUserName = searchController.text.trim();
+                  // QuerySnapshot<Map<String, dynamic>> userSnapshot =
+                  // await FirebaseFirestore.instance
+                  //     .collection('users')
+                  //     .where('userName', isEqualTo: searchedUserName)
+                  //     .get();
+
+                  // Check if the user with the entered username exists
+                  if (_searchedUserName.isNotEmpty) {
+                    // Assuming you have a function to add a member to the project
+                    _addMemberToProject(projectId, _searchedUserName, context);
+
+                    // Close the search popup
+                    Navigator.of(context).pop();
+                  } else {
+                    // Show a message indicating that the user was not found
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('User not found'),
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  primary: ColorName.primaryColor,
+                ),
+                child: Text('ADD'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _addMemberToProject(String projectId, String userName, BuildContext context) async {
+    try {
+      // Get the project reference
+      DocumentReference<Map<String, dynamic>> projectRef =
+      FirebaseFirestore.instance.collection('projects').doc(projectId);
+
+      // Check if the user is already a member of the project
+      QuerySnapshot<Map<String, dynamic>> existingMembersSnapshot =
+      await projectRef.collection('members').where('userName', isEqualTo: userName).get();
+
+      if (existingMembersSnapshot.docs.isEmpty) {
+        // If the user is not already a member, add them to the 'members' subcollection
+        await projectRef.collection('members')
+            .add({
+          'userName': userName,
+          'profileImage': '',
+        });
+
+        // Perform any additional actions or UI updates if needed
+
+        // Show a success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$userName added to the project'),
+          ),
+        );
+      } else {
+        // Show a message indicating that the user is already a member
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$userName is already a member of the project'),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error adding member to project: $e');
+    }
   }
 }

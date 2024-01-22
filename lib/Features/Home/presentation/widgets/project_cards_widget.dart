@@ -1,19 +1,67 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:go_qreate_teams/Common/colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 
-class ProjectCard extends StatelessWidget {
+class ProjectCard extends StatefulWidget {
   final String title;
   final String details;
+  final List<dynamic> members;
+  final String projectId;
+  final DateTime? startDate;
+  final DateTime? endDate;
 
-  const ProjectCard({super.key,
+  const ProjectCard({
+    super.key,
     required this.title,
     required this.details,
+    required this.members,
+    required this.projectId,
+    this.startDate,
+    this.endDate,
   });
+
+  @override
+  _ProjectCardState createState() => _ProjectCardState();
+}
+
+class _ProjectCardState extends State<ProjectCard> {
+  final TextEditingController searchController = TextEditingController();
+
+  late String _searchedUserName = '';
+
+  double calculateProgressPercentage() {
+    DateTime currentDate = DateTime.now();
+    DateTime? startDate = widget.startDate;
+    DateTime? endDate = widget.endDate;
+
+    if (startDate != null && endDate != null) {
+      if (currentDate.isBefore(startDate)) {
+        // Project has not started yet
+        return 0.0;
+      } else if (currentDate.isAfter(endDate)) {
+        // Project has already ended
+        return 1.0;
+      } else {
+        // Calculate the progress based on the current date
+        Duration totalDuration = endDate.difference(startDate);
+        Duration elapsedDuration = currentDate.difference(startDate);
+        double progress = elapsedDuration.inMilliseconds / totalDuration.inMilliseconds;
+        return progress.clamp(0.0, 1.0);
+      }
+    }
+
+    // Return 0.0 if start or end date is null
+    return 0.0;
+  }
+
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+
+    print('hahaha' + widget.members.toString());
 
     return SizedBox(
       width: double.infinity,
@@ -43,29 +91,26 @@ class ProjectCard extends StatelessWidget {
                             style: GoogleFonts.poppins(
                                 fontWeight: FontWeight.normal,
                                 fontSize: 7,
-                                color: Colors.white
-                            ),
+                                color: Colors.white),
                           ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 10,),
                     Text(
-                      title,
+                      widget.title,
                       style: GoogleFonts.poppins(
                           fontWeight: FontWeight.normal,
                           fontSize: 12,
-                          color: Colors.black
-                      ),
+                          color: Colors.black),
                     ),
                     const SizedBox(height: 5,),
                     Text(
-                      details,
+                      widget.details,
                       style: GoogleFonts.poppins(
                           fontWeight: FontWeight.normal,
                           fontSize: 7,
-                          color: Colors.black.withOpacity(0.5)
-                      ),
+                          color: Colors.black.withOpacity(0.5)),
                     ),
                     const SizedBox(height: 10,),
                     LinearPercentIndicator(
@@ -73,7 +118,7 @@ class ProjectCard extends StatelessWidget {
                       barRadius: const Radius.circular(10),
                       width: screenWidth / 1.5,
                       lineHeight: 7,
-                      percent: 0.5,
+                      percent: calculateProgressPercentage(),
                       backgroundColor: Colors.black.withOpacity(0.1),
                       progressColor: const Color(0xFF0AD3FF),
                     ),
@@ -81,7 +126,7 @@ class ProjectCard extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: Text(
-                        '50% Complete',
+                        '${(calculateProgressPercentage() * 100).toInt()}% Complete',
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w500,
                           fontSize: 7,
@@ -100,84 +145,48 @@ class ProjectCard extends StatelessWidget {
                     height: screenWidth / 3.1,
                     child: Stack(
                       children: [
-                        Positioned(
-                          top: 5,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: Colors.white, width: 1), // White stroke
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(100),
-                              child: Image.network(
-                                'https://images.unsplash.com/photo-1529665253569-6d01c0eaf7b6?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8cHJvZmlsZXxlbnwwfHwwfHw%3D&w=1000&q=80',
-                                width: 28,
-                                height: 28,
-                                fit: BoxFit.cover,
+                        for (int i = 0; i < widget.members.length && i < 4; i++)
+                          Positioned(
+                            top: i * 20.0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(100),
+                                border: Border.all(
+                                    color: Colors.white, width: 1), // White stroke
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(100),
+                                child: widget.members[i].toString().contains('http')
+                                    ? Image.network(
+                                  widget.members[i],
+                                  width: 28,
+                                  height: 28,
+                                  fit: BoxFit.cover,
+                                )
+                                    : Container(
+                                  width: 28,
+                                  height: 28,
+                                  color: Colors.grey, // Placeholder color
+                                  child: Center(
+                                    child: Text(
+                                      widget.members[i][0],
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
+                          ), // Add placeholder members if less than 4
                         Positioned(
-                          top: 25,
+                          top: 4 * 20.0,
                           child: Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: Colors.white, width: 1), // White stroke
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(100),
-                              child: Image.network(
-                                "https://images.unsplash.com/photo-1518806118471-f28b20a1d79d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=80",
-                                width: 28,
-                                height: 28,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 45,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: Colors.white, width: 1), // White stroke
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(100),
-                              child: Image.network(
-                                "https://images.unsplash.com/photo-1470406852800-b97e5d92e2aa?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=750&q=80",
-                                width: 28,
-                                height: 28,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 65,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: Colors.white, width: 1), // White stroke
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(100),
-                              child: Image.network(
-                                "https://images.unsplash.com/photo-1473700216830-7e08d47f858e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=750&q=80",
-                                width: 28,
-                                height: 28,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 85,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: Colors.white, width: 2), // White stroke
+                              border: Border.all(
+                                  color: Colors.white, width: 2), // White stroke
                             ),
                             child: SizedBox(
                               height: 28,
@@ -186,7 +195,7 @@ class ProjectCard extends StatelessWidget {
                                 backgroundColor: const Color(0xFF0AD3FF),
                                 elevation: 0,
                                 onPressed: () {
-                                  // Handle FAB click
+                                  _showSearchPopup(context, widget.projectId);
                                 },
                                 child: const Icon(
                                   Icons.add,
@@ -200,11 +209,11 @@ class ProjectCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '15\nMembers',
+                    '${widget.members.length}\nMembers',
                     style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.normal,
-                        fontSize: 7,
-                        color: Colors.black
+                      fontWeight: FontWeight.normal,
+                      fontSize: 7,
+                      color: Colors.black,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -215,5 +224,124 @@ class ProjectCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _showSearchPopup(BuildContext context, String projectId) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Add member'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15.0),
+        ),
+        content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+        Autocomplete<String>(
+        optionsBuilder: (TextEditingValue textEditingValue) async {
+      // Perform user search based on the entered username
+      String searchedUserName = textEditingValue.text.trim();
+      QuerySnapshot<Map<String, dynamic>> userSnapshot =
+      await FirebaseFirestore.instance
+          .collection('users')
+          .where('userName', isEqualTo: searchedUserName)
+          .get();
+
+      // Extract usernames from the userSnapshot
+      List<String> usernames = userSnapshot.docs
+          .map((userDoc) => userDoc.get('userName') as String)
+          .toList();
+
+      return usernames;
+      },
+        onSelected: (String userName) {
+          // Assuming you have a function to add a member to the project
+          // _addMemberToProject(projectId, userName, context);
+
+          setState(() {
+            _searchedUserName = userName;
+          });
+
+          // Close the search popup
+          // Navigator.of(context).pop();
+        },
+      ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () async {
+                  // // Perform user search based on the entered username
+                  // String searchedUserName = searchController.text.trim();
+                  // QuerySnapshot<Map<String, dynamic>> userSnapshot =
+                  // await FirebaseFirestore.instance
+                  //     .collection('users')
+                  //     .where('userName', isEqualTo: searchedUserName)
+                  //     .get();
+
+                  // Check if the user with the entered username exists
+                  if (_searchedUserName.isNotEmpty) {
+                    // Assuming you have a function to add a member to the project
+                    _addMemberToProject(projectId, _searchedUserName, context);
+
+                    // Close the search popup
+                    Navigator.of(context).pop();
+                  } else {
+                    // Show a message indicating that the user was not found
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('User not found'),
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  primary: ColorName.primaryColor,
+                ),
+                child: Text('ADD'),
+              ),
+            ],
+        ),
+      );
+        },
+    );
+  }
+
+  void _addMemberToProject(String projectId, String userName, BuildContext context) async {
+    try {
+      // Get the project reference
+      DocumentReference<Map<String, dynamic>> projectRef =
+      FirebaseFirestore.instance.collection('projects').doc(projectId);
+
+      // Check if the user is already a member of the project
+      QuerySnapshot<Map<String, dynamic>> existingMembersSnapshot =
+      await projectRef.collection('members').where('userName', isEqualTo: userName).get();
+
+      if (existingMembersSnapshot.docs.isEmpty) {
+        // If the user is not already a member, add them to the 'members' subcollection
+        await projectRef.collection('members')
+            .add({
+          'userName': userName,
+          'profileImage': '',
+        });
+
+        // Perform any additional actions or UI updates if needed
+
+        // Show a success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$userName added to the project'),
+          ),
+        );
+      } else {
+        // Show a message indicating that the user is already a member
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$userName is already a member of the project'),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error adding member to project: $e');
+    }
   }
 }

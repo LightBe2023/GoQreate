@@ -230,14 +230,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          _signIn();
-                        }
+                        // if (_formKey.currentState!.validate()) {
+                        //   _signIn();
+                        // }
 
-                        // Navigator.pushReplacement(
-                        //   context,
-                        //   MaterialPageRoute(builder: (context) => const HomeScreen()),
-                        // );
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const HomeScreen()),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         primary: const Color(0xFF0AD3FF),
