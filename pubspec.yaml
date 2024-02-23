@@ -14,7 +14,7 @@ dependencies:
   percent_indicator: ^4.2.3
   image_stack: ^2.1.1
   avatar_stack: ^1.2.0
-  intl: ^0.19.0
+#  intl: ^0.19.0
   calendar_date_picker2: ^0.5.3
   file_picker: ^6.1.1
   change_app_package_name: ^1.1.0
@@ -23,6 +23,20 @@ dependencies:
   cloud_firestore: ^4.14.0
   google_sign_in: ^6.2.1
   firebase_storage: ^11.6.0
+  image_picker: ^1.0.7
+  camera: ^0.10.5+9
+  giphy_get: ^3.5.4
+  permission_handler: ^11.3.0
+  audioplayers: ^5.2.1
+  flutter_sound: ^9.2.13
+  path_provider: ^2.1.2
+  shared_preferences: ^2.2.2
+  multiple_images_picker: ^1.0.1
+  flutter_launcher_icons: ^0.13.1
+  archive: ^3.4.10
+  share_plus: ^7.2.2
+  rename_app: ^1.3.2
+  fluttertoast: ^8.2.4
 
 dev_dependencies:
   flutter_test:
@@ -34,3 +48,9 @@ flutter:
   assets:
     - assets/icons/
     - assets/images/
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/logo_image.png"
+  min_sdk_android: 21 # android min sdk min:16, default 21

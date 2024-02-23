@@ -11,13 +11,12 @@ class DynamicTextBoxList extends StatefulWidget {
 
 class _DynamicTextBoxListState extends State<DynamicTextBoxList> {
   List<Widget> textWidgets = [];
-  List<String?> textBoxValues = [];
+  List<List<String?>> textBoxValuesList = [[]]; // Initialize with an empty list
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        ...textWidgets,
         SizedBox(
           width: double.infinity,
           child: Row(
@@ -41,9 +40,12 @@ class _DynamicTextBoxListState extends State<DynamicTextBoxList> {
                   child: TextFormField(
                     maxLines: null,
                     onChanged: (value) {
-                      textBoxValues = [value];
-                      widget.onValuesChanged(textBoxValues);
-                      textBoxValues.add(value);
+                      setState(() {
+                        // Update the value of the first text field
+                        textBoxValuesList[0] = [value];
+                        // Notify the parent widget about the updated values
+                        widget.onValuesChanged(mergeValues());
+                      });
                     },
                     decoration: const InputDecoration(
                       contentPadding: EdgeInsets.all(5),
@@ -57,9 +59,10 @@ class _DynamicTextBoxListState extends State<DynamicTextBoxList> {
                 child: GestureDetector(
                   onTap: () {
                     setState(() {
+                      // Add a new text field widget
                       textWidgets.add(
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.only(bottom: 10, right: 25),
                           child: SizedBox(
                             width: double.infinity,
                             child: Row(
@@ -83,8 +86,12 @@ class _DynamicTextBoxListState extends State<DynamicTextBoxList> {
                                     child: TextFormField(
                                       maxLines: null,
                                       onChanged: (value) {
-                                        textBoxValues = [value];
-                                        widget.onValuesChanged(textBoxValues);
+                                        setState(() {
+                                          // Update the value of this text field
+                                          textBoxValuesList[textWidgets.length] = [value];
+                                          // Notify the parent widget about the updated values
+                                          widget.onValuesChanged(mergeValues());
+                                        });
                                       },
                                       decoration: const InputDecoration(
                                         contentPadding: EdgeInsets.all(5),
@@ -93,18 +100,20 @@ class _DynamicTextBoxListState extends State<DynamicTextBoxList> {
                                     ),
                                   ),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 5),
-                                  child: Icon(
-                                    Icons.add,
-                                    size: 20,
-                                  ),
-                                ),
+                                // const Padding(
+                                //   padding: EdgeInsets.only(left: 5),
+                                //   child: Icon(
+                                //     Icons.add,
+                                //     size: 20,
+                                //   ),
+                                // ),
                               ],
                             ),
                           ),
                         ),
                       );
+                      // Add an empty list for the new text field
+                      textBoxValuesList.add([]);
                     });
                   },
                   child: const Icon(
@@ -116,7 +125,18 @@ class _DynamicTextBoxListState extends State<DynamicTextBoxList> {
             ],
           ),
         ),
+        const SizedBox(height: 10,),
+        ...textWidgets,
       ],
     );
   }
+
+  // Merge values from all text fields into a single list
+  List<String?> mergeValues() {
+    return textBoxValuesList.expand((values) => values).toList();
+  }
 }
+
+
+
+

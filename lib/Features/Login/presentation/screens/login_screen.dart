@@ -3,8 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_qreate_teams/Features/Home/presentation/screens/home_screen.dart';
 import 'package:go_qreate_teams/Features/Signup/presentation/screens/signup_screen.dart';
+import 'package:go_qreate_teams/singleton/user_manager.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -21,26 +23,56 @@ class _LoginScreenState extends State<LoginScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   Future<void> signInWithGoogle() async {
-    /// Create instance of the firebase auth and google signin
-    FirebaseAuth auth = FirebaseAuth.instance;
-    final GoogleSignIn googleSignIn = GoogleSignIn();
+    try {
+      /// Create instance of the firebase auth and google signin
+      FirebaseAuth auth = FirebaseAuth.instance;
+      final GoogleSignIn googleSignIn = GoogleSignIn();
 
-    /// Trigger the authentication flow
-    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      /// Trigger the authentication flow
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
-    /// Obtain the auth details from the request
-    final GoogleSignInAuthentication googleAuth =
-    await googleUser!.authentication;
+      /// Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth =
+      await googleUser!.authentication;
 
-    /// Create a new credentials
-    final AuthCredential credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
+      /// Create a new credentials
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
 
-    /// Sign in the user with the credentials
-    final UserCredential userCredential =
-    await auth.signInWithCredential(credential);
+      /// Sign in the user with the credentials
+      final UserCredential userCredential =
+      await auth.signInWithCredential(credential);
+
+      // Get the first name from the Google account
+      String? firstName = googleUser.displayName?.split(' ').first;
+
+      // Save username and email to Firestore
+      await saveUserToFirestore(userCredential.user?.email, firstName);
+    } catch (e) {
+      print('Failed to sign in with Google: $e');
+    }
+  }
+
+  Future<void> saveUserToFirestore(String? email, String? firstName) async {
+    if (email != null && firstName != null) {
+      CollectionReference users =
+      FirebaseFirestore.instance.collection('users');
+
+      // Check if the user already exists in Firestore
+      QuerySnapshot<Object?> snapshot =
+      await users.where('email', isEqualTo: email).get();
+
+      if (snapshot.docs.isEmpty) {
+        // User does not exist in Firestore, add new user
+        await users.add({
+          'email': email,
+          'userName': firstName, // Set first name as username for Google sign-in
+          'password': '', // Set empty string as password
+        });
+      }
+    }
   }
 
   @override
@@ -61,7 +93,8 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       if (_formKey.currentState!.validate()) {
         // Assume you have a Firestore collection named 'users'
-        CollectionReference users = FirebaseFirestore.instance.collection('users');
+        CollectionReference users =
+        FirebaseFirestore.instance.collection('users');
 
         // Check if the entered username exists in the 'users' collection
         QuerySnapshot<Object?> snapshot = await users
@@ -74,9 +107,19 @@ class _LoginScreenState extends State<LoginScreen> {
           // For simplicity, let's assume the password is stored in the 'password' field
           var userData = snapshot.docs.first.data();
           var storedPassword = (userData as Map<String, dynamic>)['password'];
+          var storedEmail = (userData)['email'];
 
           if (storedPassword == _passwordController.text) {
             // Passwords match, user is authenticated
+            // Save the login state to shared preferences
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('isLoggedIn', true);
+
+            // Save the username to shared preferences if needed
+            await prefs.setString('userName', _userNameController.text);
+            await prefs.setString('userEmail', storedEmail);
+
+            // Navigate to the home screen
             _goToHomeScreen();
           } else {
             // Passwords don't match
@@ -100,8 +143,6 @@ class _LoginScreenState extends State<LoginScreen> {
       MaterialPageRoute(builder: (context) => const HomeScreen()),
     );
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -230,14 +271,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () {
-                        // if (_formKey.currentState!.validate()) {
-                        //   _signIn();
-                        // }
+                        if (_formKey.currentState!.validate()) {
+                          _signIn();
+                        }
 
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const HomeScreen()),
-                        );
+                        // Navigator.pushReplacement(
+                        //   context,
+                        //   MaterialPageRoute(builder: (context) => const HomeScreen()),
+                        // );
                       },
                       style: ElevatedButton.styleFrom(
                         primary: const Color(0xFF0AD3FF),

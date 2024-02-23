@@ -5,6 +5,7 @@ import 'package:go_qreate_teams/Features/Home/presentation/screens/home_screen.d
 import 'package:go_qreate_teams/Features/Login/presentation/screens/login_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -23,6 +24,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _confirmPasswordController = TextEditingController();
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool isObscured = true;
 
   Future<void> signInWithGoogle() async {
     /// Create instance of the firebase auth and google signin
@@ -60,8 +62,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
         await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
           'userName': _userNameController.text,
           'password': _passwordController.text,
+          'email': _emailController.text,
+          'name': '',
+          'profileImage': '',
           // Add other fields as needed
         });
+
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+
+        // Save the username to shared preferences if needed
+        await prefs.setString('userName', _userNameController.text);
+        await prefs.setString('userEmail', _emailController.text);
 
         // Navigate to HomeScreen if sign-up is successful
         if (userCredential.user != null) {
@@ -207,6 +219,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 15,),
                 TextFormField(
+                  obscureText: isObscured,
                   controller: _passwordController,
                   decoration: InputDecoration(
                     contentPadding: EdgeInsets.all(16.0),
@@ -244,6 +257,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 15,),
                 TextFormField(
+                  obscureText: isObscured,
                   controller: _confirmPasswordController,
                   decoration: InputDecoration(
                     contentPadding: EdgeInsets.all(16.0),
@@ -266,10 +280,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       width: 20.0, // Adjust the width as needed
                       height: 20.0, // Adjust the height as needed
                     ),
-                    suffixIcon: Image.asset(
-                      'assets/icons/eye-slash.jpg', // Replace with your asset path
-                      width: 20.0, // Adjust the width as needed
-                      height: 20.0, // Adjust the height as needed
+                    suffixIcon: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          isObscured = !isObscured;
+                        });
+                      },
+                      child: Image.asset(
+                        isObscured
+                            ? 'assets/icons/eye-slash.jpg'
+                            : 'assets/icons/eye-slash.jpg',
+                        width: 20.0,
+                        height: 20.0,
+                      ),
                     ),
                     hintText: 'Confirm Password',
                     hintStyle: GoogleFonts.poppins(

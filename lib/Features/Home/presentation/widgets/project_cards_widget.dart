@@ -11,6 +11,7 @@ class ProjectCard extends StatefulWidget {
   final String projectId;
   final DateTime? startDate;
   final DateTime? endDate;
+  final String userName;
 
   const ProjectCard({
     super.key,
@@ -20,6 +21,7 @@ class ProjectCard extends StatefulWidget {
     required this.projectId,
     this.startDate,
     this.endDate,
+    required this.userName,
   });
 
   @override
@@ -60,8 +62,6 @@ class _ProjectCardState extends State<ProjectCard> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-
-    print('hahaha' + widget.members.toString());
 
     return SizedBox(
       width: double.infinity,
@@ -228,85 +228,105 @@ class _ProjectCardState extends State<ProjectCard> {
 
   void _showSearchPopup(BuildContext context, String projectId) {
     showDialog(
-        context: context,
-        builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text('Add member'),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0),
-        ),
-        content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-        Autocomplete<String>(
-        optionsBuilder: (TextEditingValue textEditingValue) async {
-      // Perform user search based on the entered username
-      String searchedUserName = textEditingValue.text.trim();
-      QuerySnapshot<Map<String, dynamic>> userSnapshot =
-      await FirebaseFirestore.instance
-          .collection('users')
-          .where('userName', isEqualTo: searchedUserName)
-          .get();
-
-      // Extract usernames from the userSnapshot
-      List<String> usernames = userSnapshot.docs
-          .map((userDoc) => userDoc.get('userName') as String)
-          .toList();
-
-      return usernames;
-      },
-        onSelected: (String userName) {
-          // Assuming you have a function to add a member to the project
-          // _addMemberToProject(projectId, userName, context);
-
-          setState(() {
-            _searchedUserName = userName;
-          });
-
-          // Close the search popup
-          // Navigator.of(context).pop();
-        },
-      ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () async {
-                  // // Perform user search based on the entered username
-                  // String searchedUserName = searchController.text.trim();
-                  // QuerySnapshot<Map<String, dynamic>> userSnapshot =
-                  // await FirebaseFirestore.instance
-                  //     .collection('users')
-                  //     .where('userName', isEqualTo: searchedUserName)
-                  //     .get();
-
-                  // Check if the user with the entered username exists
-                  if (_searchedUserName.isNotEmpty) {
-                    // Assuming you have a function to add a member to the project
-                    _addMemberToProject(projectId, _searchedUserName, context);
-
-                    // Close the search popup
-                    Navigator.of(context).pop();
-                  } else {
-                    // Show a message indicating that the user was not found
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('User not found'),
-                      ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  primary: ColorName.primaryColor,
-                ),
-                child: Text('ADD'),
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Add member'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
               ),
-            ],
-        ),
-      );
-        },
+              content: Container(
+                width: MediaQuery.of(context).size.width - 100, // Adjust width as needed
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: searchController,
+                      onChanged: (value) async {
+                        setState(() {
+                          _searchedUserName = value;
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Search user',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    if (_searchedUserName.isNotEmpty)
+                      FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        future: FirebaseFirestore.instance
+                            .collection('users')
+                            .where('userName', isEqualTo: _searchedUserName)
+                            .get(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return CircularProgressIndicator();
+                          } else if (snapshot.hasError) {
+                            return Text('Error: ${snapshot.error}');
+                          } else if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200], // Adjust the color for contrast
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: snapshot.data!.docs.length,
+                                itemBuilder: (context, index) {
+                                  String userName = snapshot.data!.docs[index].get('userName');
+                                  return ListTile(
+                                    title: Text(userName),
+                                    onTap: () {
+                                      _addMemberToProject(projectId, userName, context);
+                                      Navigator.of(context).pop();
+                                    },
+                                  );
+                                },
+                              ),
+                            );
+                          } else {
+                            return Text('No users found');
+                          }
+                        },
+                      ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () async {
+                        // Check if the user with the entered username exists
+                        if (_searchedUserName.isNotEmpty) {
+                          // Assuming you have a function to add a member to the project
+                          _addMemberToProject(projectId, _searchedUserName, context);
+
+                          // Close the search popup
+                          Navigator.of(context).pop();
+                        } else {
+                          // Show a message indicating that the user was not found
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('User not found'),
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: ColorName.primaryColor,
+                      ),
+                      child: const Text('ADD'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
-  void _addMemberToProject(String projectId, String userName, BuildContext context) async {
+  void _addMemberToProject(String projectId, String receiverUserName, BuildContext context) async {
     try {
       // Get the project reference
       DocumentReference<Map<String, dynamic>> projectRef =
@@ -314,14 +334,20 @@ class _ProjectCardState extends State<ProjectCard> {
 
       // Check if the user is already a member of the project
       QuerySnapshot<Map<String, dynamic>> existingMembersSnapshot =
-      await projectRef.collection('members').where('userName', isEqualTo: userName).get();
+      await projectRef.collection('members').where('userName', isEqualTo: receiverUserName).get();
 
       if (existingMembersSnapshot.docs.isEmpty) {
         // If the user is not already a member, add them to the 'members' subcollection
-        await projectRef.collection('members')
-            .add({
-          'userName': userName,
+        await projectRef.collection('members').add({
+          'userName': receiverUserName,
           'profileImage': '',
+        });
+
+        await FirebaseFirestore.instance.collection('notifications').add({
+          'initiatorName': widget.userName,
+          'receiverUserName': receiverUserName, // Add receiver's username
+          'projectTitle': widget.title, // Assuming projectId represents the title of the project
+          'timestamp': FieldValue.serverTimestamp(), // Add server timestamp
         });
 
         // Perform any additional actions or UI updates if needed
@@ -329,14 +355,14 @@ class _ProjectCardState extends State<ProjectCard> {
         // Show a success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('$userName added to the project'),
+            content: Text('$receiverUserName added to the project'),
           ),
         );
       } else {
         // Show a message indicating that the user is already a member
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('$userName is already a member of the project'),
+            content: Text('$receiverUserName is already a member of the project'),
           ),
         );
       }
@@ -344,4 +370,6 @@ class _ProjectCardState extends State<ProjectCard> {
       print('Error adding member to project: $e');
     }
   }
+
+
 }

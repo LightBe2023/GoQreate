@@ -1,6 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_qreate_teams/Common/colors.dart';
 import 'package:go_qreate_teams/Common/swipe_to_delete.dart';
 import 'package:go_qreate_teams/Features/Project/presentation/screens/project_details_screen.dart';
@@ -8,18 +8,16 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class MilestoneScreen extends StatefulWidget {
-  late List milestones;
-  late String projectId;
-  late String milestoneStatus;
-  late String title;
-  late String details;
-  late DateTime? startDate;
+  final List milestones;
+  final String projectId;
+  final String title;
+  final String details;
+  final DateTime? startDate;
 
-  MilestoneScreen({
+  const MilestoneScreen({
     super.key,
     required this.milestones,
     required this.projectId,
-    required this.milestoneStatus,
     required this.title,
     required this.details,
     required this.startDate,
@@ -31,267 +29,239 @@ class MilestoneScreen extends StatefulWidget {
 
 class _MilestoneScreenState extends State<MilestoneScreen> {
   final TextEditingController milestoneController = TextEditingController();
+  late List<String> editedMilestones;
+  late List<String> tempEditedMilestones;
 
-  bool isArrowDown = false;
-  bool isDeleted = false;
+  @override
+  void initState() {
+    editedMilestones = List.from(widget.milestones);
+    tempEditedMilestones = List.from(widget.milestones);
+
+    super.initState();
+  }
+
+  void _addEmptyMilestone() {
+    setState(() {
+      editedMilestones.add(''); // Add an empty string to the list
+      tempEditedMilestones.add(''); // Add an empty string to the temporary list
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: GestureDetector(
-          onTap: () {
-            Navigator.of(context).pop();
-          },
-          child: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 14,
-            color: Colors.black,
-          ),
-        ),
-        title: Text(
-          'Milestone',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-            color: ColorName.primaryColor,
-          ),
-        ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 20),
-            child: Icon(
-              Icons.add,
-              size: 20,
+    return WillPopScope(
+      onWillPop: () async {
+        return await Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => ProjectDetailsScreen(projectId: widget.projectId)),
+        );
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: GestureDetector(
+            onTap: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => ProjectDetailsScreen(projectId: widget.projectId)),
+              );
+            },
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 14,
               color: Colors.black,
             ),
-          )
-        ],
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarBrightness: Brightness.light,
-          statusBarIconBrightness: Brightness.dark,
-        ),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.only(left: 20, right: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // if (widget.milestoneStatus.contains('approved')) ...[
-            //   if (isDeleted == false) ...[
-            //     Container(
-            //       width: double.infinity,
-            //       decoration: BoxDecoration(
-            //         color: Colors.white,
-            //         borderRadius: BorderRadius.circular(6), // Adjust the radius for curved edges
-            //       ),
-            //       child: Padding(
-            //         padding: const EdgeInsets.all(5),
-            //         child: Row(
-            //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //           children: [
-            //             Expanded(
-            //               child: Column(
-            //                 crossAxisAlignment: CrossAxisAlignment.start,
-            //                 children: [
-            //                   Text(
-            //                     widget.title,
-            //                     style: GoogleFonts.poppins(
-            //                         fontWeight: FontWeight.w500,
-            //                         fontSize: 12,
-            //                         color: Colors.black
-            //                     ),
-            //                   ),
-            //                   Text(
-            //                     widget.details,
-            //                     style: GoogleFonts.poppins(
-            //                         fontWeight: FontWeight.w400,
-            //                         fontSize: 7,
-            //                         color: Colors.grey
-            //                     ),
-            //                   ),
-            //                 ],
-            //               ),
-            //             ),
-            //             const SizedBox(width: 10,),
-            //             Column(
-            //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //               children: [
-            //                 Text(
-            //                   DateFormat('dd MMM').format(widget.startDate!),
-            //                   style: GoogleFonts.poppins(
-            //                     fontWeight: FontWeight.w500,
-            //                     fontSize: 10,
-            //                     color: Colors.black,
-            //                   ),
-            //                 ),
-            //                 const SizedBox(height: 15,),
-            //                 const Icon(
-            //                   Icons.star_border,
-            //                   size: 17,
-            //                   color: Colors.grey,
-            //                 )
-            //               ],
-            //             ),
-            //             const SizedBox(width: 10,),
-            //             GestureDetector(
-            //               onTap: () {
-            //                 setState(() {
-            //                   isDeleted = true;
-            //                 });
-            //               },
-            //               child: Container(
-            //                 decoration: BoxDecoration(
-            //                   color: ColorName.primaryColor,
-            //                   borderRadius: BorderRadius.circular(4),
-            //                 ),
-            //                 child: Center(
-            //                     child: Padding(
-            //                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-            //                       child: Image.asset(
-            //                         'assets/icons/delete_icon.png',
-            //                         fit: BoxFit.contain,
-            //                         height: 18,
-            //                       ),
-            //                     )
-            //                 ),
-            //               ),
-            //             ),
-            //           ],
-            //         ),
-            //       ),
-            //     ),
-            //   ]
-            // ],
-            if (!isDeleted) ...[
-              SwipeToDelete(
-                milestones: widget.milestones,
-                onDelete: (isDeleted) {
-                  setState(() {
-                    this.isDeleted = isDeleted;
-
-                    print('bleee: '+this.isDeleted.toString());
-                  });
-                },
+          ),
+          title: Text(
+            'Milestone',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              color: ColorName.primaryColor,
+            ),
+          ),
+          actions: [
+            Padding(
+              padding: EdgeInsets.only(right: 20),
+              child: GestureDetector(
+                onTap: _addEmptyMilestone, // Call the method when add icon is tapped
+                child: Icon(
+                  Icons.add,
+                  size: 20,
+                  color: Colors.black,
+                ),
               ),
-              if (!isArrowDown) ...[
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      isArrowDown = true;
-                    });
-                  },
-                  child: const Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 30,
-                  ),
-                ),
-              ],
-              if (isArrowDown) ...[
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      isArrowDown = false;
-                    });
-                  },
-                  child: const Icon(
-                    Icons.keyboard_arrow_up_rounded,
-                    size: 30,
-                  ),
-                ),
-              ],
-              if (isArrowDown) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        _updateMilestone('revision');
-                      },
-                      child: Container(
-                        width: 63,
-                        height: 26,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: ColorName.primaryColor,
-                            width: 1, // Set the width of the stroke
-                          ),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'Revision', // Add your text here
-                            style: TextStyle(
-                              color: ColorName.primaryColor,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 20,),
-                    GestureDetector(
-                      onTap: () {
-                        _updateMilestone('approved');
-                      },
-                      child: Container(
-                        width: 63,
-                        height: 26,
-                        decoration: BoxDecoration(
-                          color: ColorName.primaryColor,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'Approve', // Add your text here
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              ]
-            ]
+            )
           ],
+          systemOverlayStyle: const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarBrightness: Brightness.light,
+            statusBarIconBrightness: Brightness.dark,
+          ),
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+        ),
+        body: Padding(
+          padding: const EdgeInsets.only(left: 20, right: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: editedMilestones.length,
+                  itemBuilder: (context, index) {
+                    final milestone = editedMilestones[index];
+                    final bool isRevised = milestone.contains('revised');
+                    final bool isApproved = milestone.contains('approved');
+
+                    String isApprovedRevised = '';
+
+                    if (isRevised) {
+                        isApprovedRevised = 'revised';
+                    } else if (isApproved) {
+                        isApprovedRevised = 'approved';
+                    }
+
+                    final displayName = milestone.replaceAll(RegExp(r',\s*status:\s*\w+'), '');
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: SwipeToDelete(
+                        milestone: displayName,
+                        onEdit: (newValue) {
+                          tempEditedMilestones[index] = newValue;
+                        },
+                        onApprove: (index) {
+                          _updateMilestoneStatus(index, 'approved');
+                        },
+                        onRevise: (index) {
+                          _updateMilestoneStatus(index, 'revised');
+                        },
+                        onDelete: (index) {
+                          _deleteMilestone(index);
+                        },
+                        index: index,
+                        isApprovedRevised: isApprovedRevised,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+                child: ElevatedButton(
+                  onPressed: () {
+                    _saveMilestones();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    primary: ColorName.primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    minimumSize: Size(double.infinity, 54.0),
+                  ),
+                  child: const Text(
+                    'Save',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Future<void> _updateMilestone(String status) async {
-    try {
+  void _saveMilestones() async {
+    setState(() {
+      // Update the main list with the changes from the temporary list
+      editedMilestones = List.from(tempEditedMilestones);
+    });
 
+    try {
       // Get the document reference for the specified projectId
       DocumentReference<Map<String, dynamic>> projectRef =
       FirebaseFirestore.instance.collection('projects').doc(widget.projectId);
 
-// Check if the document exists
-      DocumentSnapshot<Map<String, dynamic>> projectSnapshot = await projectRef.get();
+      // Update the milestones field in Firestore
+      await projectRef.update({'milestones': editedMilestones});
 
-      if (projectSnapshot.exists) {
-        // If the document exists, update the 'milestoneStatus' field
-        await projectRef.update({'milestoneStatus': status});
+      // Navigate back to the project details screen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => ProjectDetailsScreen(projectId: widget.projectId),
+        ),
+      );
+    } catch (e) {
+      print("Error updating milestones: $e");
+    }
+  }
 
+  void _updateMilestoneStatus(int index, String status) async {
+    try {
+      // Get the document reference for the specified projectId
+      DocumentReference<Map<String, dynamic>> projectRef =
+      FirebaseFirestore.instance.collection('projects').doc(widget.projectId);
+
+      // Check if the milestone at the specified index has the status field
+      bool statusExists = editedMilestones[index].contains('status');
+
+      if (!statusExists) {
+        // If the status field doesn't exist, update the milestone with the status field
+        editedMilestones[index] += ',status:$status'; // Update the milestone string
+      } else {
+        // If the status field already exists, update only the status
+        // Extract existing status and update it
+        editedMilestones[index] = editedMilestones[index].replaceFirst(RegExp(r'status:\w+'), 'status:$status');
       }
+
+      // Update the milestone in Firestore
+      await projectRef.update({
+        'milestones': editedMilestones,
+      });
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => const ProjectDetailsScreen(),
+          builder: (context) => ProjectDetailsScreen(projectId: widget.projectId),
         ),
       );
 
-      // You can also handle attachments, milestones, and other data in a similar way
+      // Update the main list with the changes from the temporary list
+      setState(() {
+        editedMilestones = List.from(tempEditedMilestones);
+      });
     } catch (e) {
-      print("Error storing data: $e");
+      print("Error updating milestone status: $e");
+    }
+  }
+
+
+  void _deleteMilestone(int index) async {
+    try {
+      // Get the document reference for the specified projectId
+      DocumentReference<Map<String, dynamic>> projectRef =
+      FirebaseFirestore.instance.collection('projects').doc(widget.projectId);
+
+      // Remove the milestone from the list in Firestore
+      editedMilestones.removeAt(index);
+      await projectRef.update({'milestones': editedMilestones});
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => ProjectDetailsScreen(projectId: widget.projectId),
+        ),
+      );
+
+      // Update the UI
+      // setState(() {
+      //   editedMilestones.removeAt(index);
+      //   tempEditedMilestones.removeAt(index);
+      // });
+    } catch (e) {
+      print("Error deleting milestone: $e");
     }
   }
 }
