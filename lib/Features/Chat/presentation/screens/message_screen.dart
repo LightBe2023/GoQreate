@@ -15,10 +15,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class MessageScreen extends StatefulWidget {
   final String recipientUserName;
+  final String? projectId;
 
   const MessageScreen({
     super.key,
     required this.recipientUserName,
+    this.projectId,
   });
 
   @override
@@ -366,6 +368,7 @@ class _MessageScreenState extends State<MessageScreen> {
       firebaseService.sendMessage(
         prefs.getString('userName')!,
         widget.recipientUserName,
+        widget.projectId ?? '',
         'GIF: $gifUrl', // Placeholder message for the GIF
       );
     }
@@ -382,6 +385,7 @@ class _MessageScreenState extends State<MessageScreen> {
         firebaseService.sendMessage(
           prefs.getString('userName')!,
           widget.recipientUserName,
+          widget.projectId ?? '',
           'Image: ${image.path}', // Placeholder message for the image
         );
       }
@@ -393,7 +397,7 @@ class _MessageScreenState extends State<MessageScreen> {
   Future<void> _sendMessage() async {
     final message = _messageController.text.trim();
     if (message.isNotEmpty) {
-      firebaseService.sendMessage(prefs.getString('userName')!, widget.recipientUserName, message);
+      firebaseService.sendMessage(prefs.getString('userName')!, widget.recipientUserName, message, widget.projectId ?? '');
       _messageController.clear();
     }
   }
@@ -480,6 +484,7 @@ class _MessageScreenState extends State<MessageScreen> {
       firebaseService.sendMessage(
         prefs.getString('userName')!,
         widget.recipientUserName,
+        widget.projectId ?? '',
         'Image: ${pickedImage.path}', // Placeholder message for the image
       );
     }

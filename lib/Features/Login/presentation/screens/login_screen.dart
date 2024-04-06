@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_qreate_teams/Features/Home/presentation/screens/home_screen.dart';
 import 'package:go_qreate_teams/Features/Signup/presentation/screens/signup_screen.dart';
 import 'package:go_qreate_teams/singleton/user_manager.dart';
@@ -123,13 +124,26 @@ class _LoginScreenState extends State<LoginScreen> {
             _goToHomeScreen();
           } else {
             // Passwords don't match
-            // You may want to display an error message or handle this case accordingly
-            print('Invalid password');
+            // Display a toast message
+            Fluttertoast.showToast(
+              msg: "Incorrect email or password",
+              toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.BOTTOM,
+              backgroundColor: Colors.red,
+              textColor: Colors.white,
+            );
           }
         } else {
           // User with the provided username doesn't exist
           // You may want to display an error message or handle this case accordingly
           print('User not found');
+          Fluttertoast.showToast(
+            msg: "User not found",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+          );
         }
       }
     } catch (e) {
@@ -281,7 +295,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         // );
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: const Color(0xFF0AD3FF),
+                        backgroundColor: const Color(0xFF0AD3FF),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0),
                         ),
@@ -352,7 +366,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: Colors.white,
+                        backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0),
                           side: BorderSide(

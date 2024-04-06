@@ -232,8 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                elevation: 2, // Adjust the elevation as needed
-                primary: Colors.white, // Button color
+                elevation: 2, backgroundColor: Colors.white, // Button color
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0),
                 ),

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_qreate_teams/Features/Home/presentation/screens/home_screen.dart';
 import 'package:go_qreate_teams/Features/Login/presentation/screens/login_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -86,7 +87,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (e.code == 'weak-password') {
         print('The password provided is too weak.');
       } else if (e.code == 'email-already-in-use') {
-        print('The account already exists for that email.');
+        // Display a toast message for existing email
+        Fluttertoast.showToast(
+          msg: "A Teams account already exists with this email address",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
       }
       // Handle other FirebaseAuthException cases as needed.
     } catch (e) {
@@ -322,7 +330,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: const Color(0xFF0AD3FF), // Button color
+                        backgroundColor: const Color(0xFF0AD3FF), // Button color
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0), // Border radius
                         ),
@@ -393,7 +401,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: Colors.white, // Button color
+                        backgroundColor: Colors.white, // Button color
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0), // Border radius
                           side: BorderSide(color: Colors.black.withOpacity(0.1)), // Outline color

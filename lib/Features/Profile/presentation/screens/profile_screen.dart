@@ -9,6 +9,7 @@ import 'package:go_qreate_teams/Features/Login/presentation/screens/login_screen
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -248,7 +249,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   });
                 },
                 style: ElevatedButton.styleFrom(
-                  primary: _editMode ? Colors.green : Colors.black.withOpacity(0.5),
+                  backgroundColor: _editMode ? Colors.green : Colors.black.withOpacity(0.5),
                   padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
@@ -265,6 +266,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 30,),
+              GestureDetector(
+                onTap: () {
+                  Uri uri = Uri.parse('https://forms.gle/5jpQiiYzc3riLDmw5');
+                  _launchUrl(uri);
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Feedback',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.normal,
+                        fontSize: 13,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                    const SizedBox(width: 5,),
+                    const Icon(
+                      Icons.feedback_rounded,
+                      color: ColorName.primaryColor,
+                    )
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20,),
               TextFormField(
                 enabled: _editMode,
                 controller: _nameController,
@@ -502,5 +528,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       )
     );
+  }
+
+  Future<void> _launchUrl(Uri uri) async {
+    if (!await launchUrl(uri)) {
+      throw Exception('Could not launch $uri');
+    }
   }
 }

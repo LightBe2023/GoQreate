@@ -312,7 +312,7 @@ class _ProjectCardState extends State<ProjectCard> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: ColorName.primaryColor,
+                        backgroundColor: ColorName.primaryColor,
                       ),
                       child: const Text('ADD'),
                     ),

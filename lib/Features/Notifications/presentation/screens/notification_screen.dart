@@ -37,8 +37,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       style: ElevatedButton.styleFrom(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10.0),
-        ),
-        primary: isSelected ? ColorName.primaryColor : Colors.white,
+        ), backgroundColor: isSelected ? ColorName.primaryColor : Colors.white,
         elevation: 1,
         padding: EdgeInsets.zero,
       ),
@@ -109,7 +108,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   elevation: 1,
-                  primary: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),

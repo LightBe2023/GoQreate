@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:go_qreate_teams/Features/Splash/splash_screen.dart';
 import 'package:go_qreate_teams/firebase_options.dart';
 
@@ -52,6 +53,7 @@ class _MyAppState extends State<MyApp> {
       ),
       debugShowCheckedModeBanner: false,
       home: const SplashScreen(),
+      builder: EasyLoading.init(),
     );
   }
 }

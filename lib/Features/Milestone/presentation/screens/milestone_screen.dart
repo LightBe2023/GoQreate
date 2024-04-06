@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:go_qreate_teams/Common/colors.dart';
 import 'package:go_qreate_teams/Common/swipe_to_delete.dart';
 import 'package:go_qreate_teams/Features/Project/presentation/screens/project_details_screen.dart';
@@ -8,19 +9,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class MilestoneScreen extends StatefulWidget {
-  final List milestones;
   final String projectId;
-  final String title;
-  final String details;
-  final DateTime? startDate;
 
   const MilestoneScreen({
     super.key,
-    required this.milestones,
     required this.projectId,
-    required this.title,
-    required this.details,
-    required this.startDate,
   });
 
   @override
@@ -32,12 +25,36 @@ class _MilestoneScreenState extends State<MilestoneScreen> {
   late List<String> editedMilestones;
   late List<String> tempEditedMilestones;
 
+  List _milestones = [];
+
   @override
   void initState() {
-    editedMilestones = List.from(widget.milestones);
-    tempEditedMilestones = List.from(widget.milestones);
+    editedMilestones = [];
+    tempEditedMilestones = [];
 
+    fetchData();
     super.initState();
+  }
+
+  Future<void> fetchData() async {
+    try {
+      // Fetch the project data based on the provided projectId
+      DocumentSnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore.instance
+          .collection('projects')
+          .doc(widget.projectId) // Use the provided projectId
+          .get();
+
+      if (snapshot.exists) {
+        setState(() {
+          _milestones = List.from(snapshot.get('milestones') ?? []);
+
+          editedMilestones = List.from(_milestones);
+          tempEditedMilestones = List.from(_milestones);
+        });
+      }
+    } catch (e) {
+      print("Error fetching data: $e");
+    }
   }
 
   void _addEmptyMilestone() {
@@ -70,7 +87,7 @@ class _MilestoneScreenState extends State<MilestoneScreen> {
             ),
           ),
           title: Text(
-            'Milestone',
+            'Milestones',
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.w600,
               fontSize: 18,
@@ -130,12 +147,15 @@ class _MilestoneScreenState extends State<MilestoneScreen> {
                           tempEditedMilestones[index] = newValue;
                         },
                         onApprove: (index) {
+                          EasyLoading.show(status: 'Updating Milestone Status...');
                           _updateMilestoneStatus(index, 'approved');
                         },
                         onRevise: (index) {
+                          EasyLoading.show(status: 'Updating Milestone Status...');
                           _updateMilestoneStatus(index, 'revised');
                         },
                         onDelete: (index) {
+                          EasyLoading.show(status: 'Deleting Milestone...');
                           _deleteMilestone(index);
                         },
                         index: index,
@@ -149,10 +169,11 @@ class _MilestoneScreenState extends State<MilestoneScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
                 child: ElevatedButton(
                   onPressed: () {
+                    EasyLoading.show(status: 'Saving Milestone...');
                     _saveMilestones();
                   },
                   style: ElevatedButton.styleFrom(
-                    primary: ColorName.primaryColor,
+                    backgroundColor: ColorName.primaryColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.0),
                     ),
@@ -190,12 +211,26 @@ class _MilestoneScreenState extends State<MilestoneScreen> {
       await projectRef.update({'milestones': editedMilestones});
 
       // Navigate back to the project details screen
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => ProjectDetailsScreen(projectId: widget.projectId),
-        ),
-      );
+      // Navigator.of(context).pushReplacement(
+      //   MaterialPageRoute(
+      //     builder: (context) => ProjectDetailsScreen(projectId: widget.projectId),
+      //   ),
+      // );
+
+      EasyLoading.showSuccess('Milestone saved successfully!');
+
+      Future.delayed(const Duration(seconds: 2), () {
+        EasyLoading.dismiss();
+      });
+
+      setState(() {
+        fetchData();
+      });
     } catch (e) {
+      EasyLoading.showError('Failed with Error: $e');
+      Future.delayed(const Duration(seconds: 2), () {
+        EasyLoading.dismiss();
+      });
       print("Error updating milestones: $e");
     }
   }
@@ -223,17 +258,31 @@ class _MilestoneScreenState extends State<MilestoneScreen> {
         'milestones': editedMilestones,
       });
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => ProjectDetailsScreen(projectId: widget.projectId),
-        ),
-      );
+      // Navigator.of(context).pushReplacement(
+      //   MaterialPageRoute(
+      //     builder: (context) => ProjectDetailsScreen(projectId: widget.projectId),
+      //   ),
+      // );
+
+      EasyLoading.showSuccess('Milestone status updated successfully!');
+
+      Future.delayed(const Duration(seconds: 2), () {
+        EasyLoading.dismiss();
+      });
+
+      setState(() {
+        fetchData();
+      });
 
       // Update the main list with the changes from the temporary list
       setState(() {
         editedMilestones = List.from(tempEditedMilestones);
       });
     } catch (e) {
+      EasyLoading.showError('Failed with Error: $e');
+      Future.delayed(const Duration(seconds: 2), () {
+        EasyLoading.dismiss();
+      });
       print("Error updating milestone status: $e");
     }
   }
@@ -249,11 +298,21 @@ class _MilestoneScreenState extends State<MilestoneScreen> {
       editedMilestones.removeAt(index);
       await projectRef.update({'milestones': editedMilestones});
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => ProjectDetailsScreen(projectId: widget.projectId),
-        ),
-      );
+      // Navigator.of(context).pushReplacement(
+      //   MaterialPageRoute(
+      //     builder: (context) => ProjectDetailsScreen(projectId: widget.projectId),
+      //   ),
+      // );
+
+      EasyLoading.showSuccess('Milestone status deleted successfully!');
+
+      Future.delayed(const Duration(seconds: 2), () {
+        EasyLoading.dismiss();
+      });
+
+      setState(() {
+        fetchData();
+      });
 
       // Update the UI
       // setState(() {
@@ -261,6 +320,10 @@ class _MilestoneScreenState extends State<MilestoneScreen> {
       //   tempEditedMilestones.removeAt(index);
       // });
     } catch (e) {
+      EasyLoading.showError('Failed with Error: $e');
+      Future.delayed(const Duration(seconds: 2), () {
+        EasyLoading.dismiss();
+      });
       print("Error deleting milestone: $e");
     }
   }

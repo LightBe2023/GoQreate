@@ -3,11 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class FirebaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> sendMessage(String sender, String recipient, String message) async {
+  Future<void> sendMessage(String sender, String recipient, String message, String projectId) async {
     await _firestore.collection('messages').add({
       'sender': sender,
       'recipient': recipient,
       'message': message,
+      'projectId': projectId,
       'timestamp': FieldValue.serverTimestamp(),
     });
   }
@@ -20,8 +21,30 @@ class FirebaseService {
         .snapshots();
   }
 
-  Stream<List<Map<String, dynamic>>> getChatsWithPreview() {
-    return _firestore.collection('messages').snapshots().map((snapshot) {
+  Future<bool> groupChatExists(List<String> members) async {
+    final QuerySnapshot<Map<String, dynamic>> querySnapshot = await _firestore
+        .collection('group_chats')
+        .where('members', arrayContains: members)
+        .get();
+
+    return querySnapshot.docs.isNotEmpty;
+  }
+
+  Future<String> createGroupChat(List<String> members) async {
+    final DocumentReference groupChatRef = await _firestore.collection('group_chats').add({
+      'members': members,
+      'created_at': FieldValue.serverTimestamp(),
+    });
+
+    return groupChatRef.id;
+  }
+
+  Stream<List<Map<String, dynamic>>> getChatsWithPreview(String projectId) {
+    return _firestore
+        .collection('messages')
+        .where('projectId', isEqualTo: projectId) // Filter messages by projectId
+        .snapshots()
+        .map((snapshot) {
       List<Map<String, dynamic>> chatPreviews = [];
 
       // Group messages by recipient
@@ -58,4 +81,5 @@ class FirebaseService {
       return chatPreviews;
     });
   }
+
 }

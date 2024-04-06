@@ -8,7 +8,12 @@ import 'package:go_qreate_teams/singleton/user_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ChatHomeScreen extends StatefulWidget {
-  const ChatHomeScreen({Key? key}) : super(key: key);
+  final String? projectId;
+
+  const ChatHomeScreen({
+    super.key,
+    this.projectId,
+  });
 
   @override
   State<ChatHomeScreen> createState() => _ChatHomeScreenState();
@@ -136,7 +141,7 @@ class _ChatHomeScreenState extends State<ChatHomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => MessageScreen(recipientUserName: userName),
+                    builder: (context) => MessageScreen(recipientUserName: userName, projectId: widget.projectId),
                   ),
                 );
               },
@@ -145,7 +150,7 @@ class _ChatHomeScreenState extends State<ChatHomeScreen> {
             // Lists of chats
             Expanded(
               child: StreamBuilder<List<Map<String, dynamic>>>(
-                stream: firebaseService.getChatsWithPreview(),
+                stream: firebaseService.getChatsWithPreview(widget.projectId ?? ''),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return Center(child: CircularProgressIndicator());

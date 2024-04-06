@@ -77,7 +77,8 @@ class _SwipeToDeleteState extends State<SwipeToDelete> {
                     TextButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        widget.onRevise(widget.index);
+                        setState(() {
+                        });
                       },
                       child: Text('Cancel'),
                     ),
@@ -99,12 +100,12 @@ class _SwipeToDeleteState extends State<SwipeToDelete> {
                           Navigator.pop(context);
                           widget.onDelete(widget.index);
                         },
-                        child: Text(
-                          'Delete',
-                          style: TextStyle(
-                            color: Colors.red,
+                        child: const Text(
+                            'Delete',
+                            style: TextStyle(
+                              color: Colors.red,
+                            ),
                           ),
-                        ),
                       ),
                     ),
                     TextButton(
@@ -117,7 +118,8 @@ class _SwipeToDeleteState extends State<SwipeToDelete> {
                     TextButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        widget.onDelete(widget.index);
+                        setState(() {
+                        });
                       },
                       child: Text('Cancel'),
                     ),

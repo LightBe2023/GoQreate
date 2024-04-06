@@ -83,6 +83,7 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
   void _onFileSelected(List<String?> filePaths) {
     setState(() {
       selectedFiles = filePaths;
+      print('weeee: '+filePaths.toString());
     });
   }
 
@@ -161,6 +162,8 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
       // Close the loading dialog
       Navigator.of(context).pop();
 
+      await prefs.remove('filePaths');
+
       // Navigate to the project details screen
       Navigator.of(context).push(
         MaterialPageRoute(
@@ -180,8 +183,10 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
     try {
       List<String?> fileUrls = [];
 
+      List<String>? storedImages = prefs.getStringList('filePaths');
+
       // Upload files and get URLs
-      for (String? filePath in selectedFiles) {
+      for (String? filePath in storedImages!) {
         if (filePath != null) {
           File file = File(filePath);
           String? fileUrl = await uploadFile(file);
@@ -220,11 +225,13 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
                 child: const Text('Cancel'),
               ),
               TextButton(
-                onPressed: () {
+                onPressed: () async {
                   // Pop the dialog and navigate back to the previous screen
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(builder: (context) => const HomeScreen()),
                   );
+                  SharedPreferences prefs = await SharedPreferences.getInstance();
+                  await prefs.remove('filePaths');
                 },
                 child: const Text('Discard'),
               ),
@@ -235,10 +242,12 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
       child: Scaffold(
         appBar: AppBar(
           leading: GestureDetector(
-            onTap: () {
+            onTap: () async {
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (context) => const HomeScreen()),
               );
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              await prefs.remove('filePaths');
             },
             child: InkWell(
               onTap: () async {
@@ -331,7 +340,7 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.transparent,
-                    hintText: 'Purpose',
+                    hintText: 'Project Type',
                     hintStyle: GoogleFonts.poppins(
                       fontWeight: FontWeight.normal,
                       fontSize: 16,
@@ -440,8 +449,6 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (context) => FileScreen(
-                            onFileSelected: _onFileSelected,
-                            selectedFiles: selectedFiles,
                           ),
                         ),
                       );
@@ -577,7 +584,7 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
                       _storeData();
                     },
                     style: ElevatedButton.styleFrom(
-                      primary: ColorName.primaryColor,
+                      backgroundColor: ColorName.primaryColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.0),
                       ),

@@ -33,6 +33,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
   String budget = "";
   DateTime? _startDate;
   DateTime? _endDate;
+  List<String> fileUrls = [];
 
   late TextEditingController projectDetailsController;
 
@@ -72,11 +73,13 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
           _milestones = List.from(snapshot.get('milestones') ?? []);
           _milestoneStatus = snapshot.get('milestoneStatus') ?? "";
 
-          // Retrieve fileUrls array from the document
-          List<String>? fileUrls = List<String>.from(snapshot.get('fileUrls') ?? []);
+          setState(() {
+            // Retrieve fileUrls array from the document
+            fileUrls = List<String>.from(snapshot.get('fileUrls') ?? []);
+          });
 
-          // Update selectedFiles list with retrieved fileUrls
-          for (int i = 0; i < fileUrls.length; i++) {
+          // Update selectedFiles list with the first 5 fileUrls
+          for (int i = 0; i < fileUrls.length && i < 5; i++) {
             selectedFiles[i] = fileUrls[i];
           }
         });
@@ -218,6 +221,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                     ],
                   ),
                   child: TextFormField(
+                    enabled: false,
                     controller: projectDetailsController,
                     maxLines: null,
                     decoration: InputDecoration(
@@ -307,7 +311,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                     InkWell(
                       onTap: () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => const ChatHomeScreen()),
+                          MaterialPageRoute(builder: (context) => ChatHomeScreen(projectId: _projectId)),
                         );
                       },
                       child: Text(
@@ -325,7 +329,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                 GestureDetector(
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const ChatHomeScreen()),
+                      MaterialPageRoute(builder: (context) => ChatHomeScreen(projectId: _projectId)),
                     );
                   },
                   child: Container(
@@ -360,7 +364,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => AllFileScreen(selectedFiles: selectedFiles),
+                            builder: (context) => AllFileScreen(selectedFiles: fileUrls, projectId: widget.projectId),
                           ),
                         );
                       },
@@ -378,19 +382,44 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                 ),
                 const SizedBox(height: 5,),
 
+                // Inside the build method of _ProjectDetailsScreenState
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: List.generate(
                     5,
                         (index) {
                       return GestureDetector(
-                        onTap: () async {
-                          // FilePickerResult? result = await FilePicker.platform.pickFiles();
-                          // if (result != null && result.files.isNotEmpty) {
-                          //   setState(() {
-                          //     selectedFiles[index] = result.files.first.path;
-                          //   });
-                          // }
+                        onTap: () {
+                          if (selectedFiles[index] != null) {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  content: SizedBox(
+                                    width: 300,
+                                    height: 300,
+                                    child: selectedFiles[index]!.contains('http') || selectedFiles[index]!.contains('https')
+                                        ? Image.network(
+                                      selectedFiles[index]!,
+                                      fit: BoxFit.contain,
+                                    )
+                                        : Image.file(
+                                      File(selectedFiles[index]!), // Convert string path to File
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text('Close'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }
                         },
                         child: Card(
                           elevation: 1,
@@ -407,13 +436,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                               File(selectedFiles[index]!), // Convert string path to File
                               fit: BoxFit.cover,
                             )
-                                :
-                                Container()
-                            // Icon(
-                            //   Icons.add,
-                            //   size: 14,
-                            //   color: ColorName.primaryColor,
-                            // ),
+                                : Container(),
                           ),
                         ),
                       );
@@ -422,7 +445,8 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                 ),
 
 
-                const SizedBox(height: 15,),
+
+                const SizedBox(height: 40,),
                 SizedBox(
                   width: double.infinity,
                   child: Text(
@@ -439,11 +463,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => MilestoneScreen(
-                            milestones: _milestones,
                             projectId: _projectId,
-                          title: title,
-                          details: projectDetails,
-                          startDate: _startDate,
                         ),
                       ),
                     );
@@ -563,7 +583,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: ColorName.primaryColor,
+                        backgroundColor: ColorName.primaryColor,
                       ),
                       child: const Text('ADD'),
                     ),

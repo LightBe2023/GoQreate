@@ -53,7 +53,6 @@ class _SearchScreenState extends State<SearchScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         elevation: 1,
-                        primary: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0),
                         ),
